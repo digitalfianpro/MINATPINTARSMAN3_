@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTest Premium - SMA Negeri 3 Kota Sorong</title>
+    
+    <!-- Preload Logo agar muncul secara instan -->
+    <link rel="preload" as="image" href="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" fetchpriority="high">
+    <link rel="preload" as="image" href="https://i.ibb.co/ZR1CsWqx/ALFIAN-2024493911-1.jpg" fetchpriority="high">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Animations for Luxury Effects -->
+    <style>
+        .shiny-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .shiny-effect::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(30deg);
+            animation: shine 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-150%) rotate(30deg); }
+            30% { transform: translateX(150%) rotate(30deg); }
+            100% { transform: translateX(150%) rotate(30deg); }
+        }
+        
+        .floating-logo {
+            animation: float 6s ease-in-out infinite;
+            will-change: transform;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* Custom Scrollbar with Cyber Light Blue style */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(14, 165, 233, 0.5); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.8); }
+        
+        /* Smooth interactions */
+        button { outline: none !important; -webkit-tap-highlight-color: transparent; }
+    </style>
+
+    <!-- FIREBASE SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for in-browser JSX parsing -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-[#101015] text-slate-200 font-sans antialiased selection:bg-cyan-500/30 h-screen w-screen overflow-hidden">
+
+    <div id="root" class="h-full w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // --- FIREBASE CONFIGURATION & INITIALIZATION ---
+        const userFirebaseConfig = {
+            apiKey: "AIzaSyAc4cpfZ5ZUUVd83kib7j6FCpzKfmAFEyw",
+            authDomain: "minatpintarsman3sorong.firebaseapp.com",
+            projectId: "minatpintarsman3sorong",
+            storageBucket: "minatpintarsman3sorong.firebasestorage.app",
+            messagingSenderId: "810743967203",
+            appId: "1:810743967203:web:dabd2567c14f6f670444d6",
+            measurementId: "G-86KLG2WX1R"
+        };
+
+        const finalConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(finalConfig);
+        }
+        
+        const firestore = firebase.firestore();
+        
+        // Optimasi Kinerja: Aktifkan caching offline agar super cepat tanpa lag
+        firestore.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+            console.warn("Offline persistence not enabled:", err.code);
+        });
+
+        const auth = firebase.auth();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sman3sorong';
+        const dbRef = firestore.collection('artifacts').doc(appId).collection('public').doc('data').collection('edutest_data').doc('main_database');
+
+        const initializeFirestore = async () => {
+            try {
+                const snap = await dbRef.get();
+                if (!snap.exists) {
+                    await dbRef.set({
+                        activeTests: [],
+                        students: [],
+                        schoolData: {
+                            schoolName: 'SMA NEGERI 3 KOTA SORONG',
+                            counselorName: '',
+                            counselorNip: '',
+                            city: 'Sorong',
+                            dateSet: new Date().toISOString().split('T')[0]
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Gagal terhubung ke Firestore.", error);
+            }
+        };
+
+        // --- DATA MOCKUP & LOGIC ---
+        const TEST_CATALOG = [
+          { id: 't1', name: 'Tes Kemampuan', desc: 'Evaluasi kognitif dan logika.', icon: <i className="fas fa-chart-line text-lg" /> },
+          { id: 't2', name: 'Tes Kepribadian', desc: 'Analisis profil psikologis.', icon: <i className="fas fa-user-check text-lg" /> },
+          { id: 't3', name: 'Tes Penjurusan', desc: 'Rekomendasi IPA/IPS/Bahasa.', icon: <i className="fas fa-award text-lg" /> },
+          { id: 't4', name: 'Tes Minat & Bakat', desc: 'Pemetaan potensi bakat.', icon: <i className="fas fa-check-circle text-lg" /> },
+          { id: 't5', name: 'Tes Gaya Belajar', desc: 'Identifikasi metode belajar.', icon: <i className="fas fa-book-open text-lg" /> }
+        ];
+
+        const generateMockQuestions = () => {
+          const qs = [];
+          for(let i=1; i<=35; i++) {
+            if(i <= 30) {
+              qs.push({
+                id: i,
+                type: 'mcq',
+                text: `Soal ${i} (Materi Gabungan SMP & SMA): \nPerhatikan skenario berikut. Jika diketahui variabel X = ${i * 2} dan Y = ${i + 5}, manakah pernyataan di bawah ini yang paling tepat menggambarkan hubungan antara teori dasar dan aplikasi praktisnya dalam pemecahan masalah kehidupan sehari-hari?`,
+                options: [
+                  `Pernyataan A: Menunjukkan hasil yang linier sebesar ${i * 3}`,
+                  `Pernyataan B: Analisis alternatif berdasarkan pengamatan sekunder`,
+                  `Pernyataan C: Solusi ini paling relevan untuk kasus observasi`,
+                  `Pernyataan D: Tidak ada relevansi langsung dengan konteks awal`
+                ]
+              });
+            } else {
+              qs.push({
+                id: i,
+                type: 'essay',
+                text: `Soal Uraian ${i} (Analisis Mendalam SMA/SMP): \nBerdasarkan prinsip-prinsip sains dan sosial yang telah dipelajari, uraikan pandangan, evaluasi, serta langkah konkrit yang akan Anda ambil jika dihadapkan pada situasi kritis yang membutuhkan pemecahan masalah multidimensi. Berikan contoh spesifik!`
+              });
+            }
+          }
+          return qs;
+        };
+        const MOCK_QUESTIONS = generateMockQuestions();
+
+        const generateAnalysis = (student) => {
+          if (student.status === 'finished') {
+            return {
+              rekomendasi: "Siswa menunjukkan potensi akademik yang sangat baik (skor di atas rata-rata). Disarankan untuk diarahkan ke peminatan MIPA atau Teknik.",
+              tindakLanjut: "Guru BK perlu menjadwalkan sesi konseling karir lanjutan, merekomendasikan siswa pada program pengayaan/olimpiade, dan memonitor perkembangan nilainya bersama wali kelas.",
+              saran: "Pertahankan motivasi belajar, rajin berdiskusi, dan latih kemampuan literasi sosial serta komunikasi interpersonal siswa."
+            };
+          } else if (student.status === 'testing') {
+            return {
+              rekomendasi: "Proses evaluasi masih berlangsung. Data sementara menunjukkan kecepatan pengerjaan yang stabil.",
+              tindakLanjut: "Guru BK harap memantau progres siswa di live dashboard. Hubungi siswa via chat jika waktu hampir habis namun progres soal masih sedikit.",
+              saran: "Fokus pada manajemen waktu ujian dan baca setiap instruksi pada soal uraian dengan teliti."
+            };
+          } else {
+            return {
+              rekomendasi: "Belum dapat memberikan rekomendasi. Siswa belum memulai atau menyelesaikan modul asesmen.",
+              tindakLanjut: "Guru BK segera menghubungi siswa bersangkutan atau wali kelasnya untuk memastikan siswa melakukan login dan segera mengerjakan tes.",
+              saran: "Pastikan perangkat siswa memadai dan berikan pemahaman urgensi asesmen ini untuk masa depannya."
+            };
+          }
+        };
+
+        // --- MAIN APP COMPONENT ---
+        function App() {
+          const [role, setRole] = useState(sessionStorage.getItem('eduTest_role') || null);
+          const [isRefreshing, setIsRefreshing] = useState(false);
+          const [user, setUser] = useState(null);
+
+          useEffect(() => {
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await auth.signInWithCustomToken(__initial_auth_token);
+                    } else {
+                        await auth.signInAnonymously();
+                    }
+                } catch(e) { console.error("Auth Error:", e); }
+            };
+            initAuth();
+
+            const unsubscribe = auth.onAuthStateChanged((u) => {
+                setUser(u);
+                if (u) initializeFirestore();
+            });
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if ((urlParams.get('role') === 'student' || window.location.hash === '#student') && !role) {
+              setRole('student');
+              sessionStorage.setItem('eduTest_role', 'student');
+            }
+
+            return () => unsubscribe();
+          }, [role]);
+
+          const selectRole = (selectedRole) => {
+            setRole(selectedRole);
+            sessionStorage.setItem('eduTest_role', selectedRole);
+            try {
+              if (window.location.search) window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (error) {}
+          };
+
+          const handleLogout = () => {
+            setRole(null);
+            sessionStorage.removeItem('eduTest_role');
+            sessionStorage.removeItem('eduTest_studentSession');
+            window.location.hash = '';
+          };
+
+          const globalRefresh = () => {
+            setIsRefreshing(true);
+            setTimeout(() => setIsRefreshing(false), 800);
+          };
+
+          if (!user) {
+              return (
+                 <div className="h-full w-full bg-[#101015] flex flex-col items-center justify-center relative">
+                     <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-sky-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+                     <i className="fas fa-spinner fa-spin text-4xl text-sky-400 mb-4 relative z-10"></i>
+                     <p className="text-sky-200/50 font-bold tracking-widest text-sm relative z-10">MENGHUBUNGKAN KE SERVER...</p>
+                 </div>
+              );
+          }
+
+          return (
+            <div className="h-full w-full flex flex-col relative overflow-hidden bg-[#101015]">
+              {/* HEAVY CYBER LIGHT BLUE BACKLIGHTS */}
+              <div className="absolute top-[-15%] left-[-10%] w-[75%] h-[75%] bg-gradient-to-br from-cyan-400/30 via-sky-400/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute top-[20%] left-[20%] w-[50%] h-[50%] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute bottom-[-15%] right-[-5%] w-[65%] h-[65%] bg-gradient-to-tl from-cyan-300/30 to-sky-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+              {!role && (
+                <div className="flex-1 flex items-center justify-center p-4 animate-fade-in z-10 h-full overflow-hidden">
+                  <div className="max-w-4xl w-full grid md:grid-cols-2 gap-6 relative">
+                    
+                    <div className="col-span-full text-center mb-4 flex flex-col items-center">
+                      <div className="floating-logo flex flex-col items-center justify-center mb-4">
+                        <div className="relative rounded-full p-2.5 bg-white/5 backdrop-blur-xl shadow-[0_0_50px_rgba(34,211,238,0.4)] border-2 border-sky-500/40 shiny-effect mb-4">
+                           <img src="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" alt="Logo SMA N 3 Kota Sorong" fetchpriority="high" loading="eager" decoding="sync" className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl" />
+                        </div>
+                        <h1 className="text-2xl md:text-3xl font-black text-white tracking-widest uppercase drop-shadow-md mb-1">
+                          SMA NEGERI 3 KOTA SORONG
+                        </h1>
+                        <p className="text-sky-400 font-extrabold text-sm tracking-widest uppercase">
+                           Portal Asesmen Digital Premium
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Teacher Card */}
+                    <button type="button" onClick={() => selectRole('counselor')} className="group relative p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/10 shadow-2xl hover:border-sky-500/50 backdrop-blur-md transition-all duration-300 text-left overflow-hidden hover:-translate-y-1 active:scale-95">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <i className="fas fa-users text-4xl text-sky-400 mb-4 relative z-10 drop-shadow-lg"></i>
+                      <h2 className="text-2xl font-bold text-white mb-2 relative z-10">Portal Guru BK</h2>
+                      <p className="text-slate-400 relative z-10 text-sm leading-relaxed">Kelola sesi tes, aktifkan modul, dan pantau status pengerjaan siswa secara real-time.</p>
+                      <div className="mt-6 flex items-center text-sky-400 font-bold opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                        Masuk Portal <i className="fas fa-chevron-right ml-2"></i>
+                      </div>
+                    </button>
+
+                    {/* Student Card */}
+                    <button type="button" onClick={() => selectRole('student')} className="group relative p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/10 shadow-2xl hover:border-sky-500/50 backdrop-blur-md transition-all duration-300 text-left overflow-hidden hover:-translate-y-1 active:scale-95">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <i className="fas fa-graduation-cap text-4xl text-sky-400 mb-4 relative z-10 drop-shadow-lg"></i>
+                      <h2 className="text-2xl font-bold text-white mb-2 relative z-10">Portal Siswa</h2>
+                      <p className="text-slate-400 relative z-10 text-sm leading-relaxed">Masuk untuk mengerjakan tes yang telah diaktifkan oleh Guru BK Anda.</p>
+                      <div className="mt-6 flex items-center text-sky-400 font-bold opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 relative z-10">
+                        Masuk Portal <i className="fas fa-chevron-right ml-2"></i>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {role === 'counselor' && <CounselorPortal onLogout={handleLogout} isRefreshing={isRefreshing} onRefresh={globalRefresh} user={user} />}
+              {role === 'student' && <StudentPortal onLogout={handleLogout} isRefreshing={isRefreshing} onRefresh={globalRefresh} user={user} />}
+            </div>
+          );
+        }
+
+        // ==========================================
+        // PORTAL GURU BK (COUNSELOR)
+        // ==========================================
+        function CounselorPortal({ onLogout, isRefreshing, onRefresh, user }) {
+          const [db, setDb] = useState({ activeTests: [], students: [], schoolData: {} });
+          const [counselorSession, setCounselorSession] = useState(sessionStorage.getItem('eduTest_counselorSession'));
+          const [copied, setCopied] = useState(false);
+          const [activeTab, setActiveTab] = useState('dashboard');
+          const [saveStatus, setSaveStatus] = useState('');
+          const [showConfirmClear, setShowConfirmClear] = useState(false);
+          const [showPassword, setShowPassword] = useState(false);
+          const [loginError, setLoginError] = useState('');
+
+          useEffect(() => {
+            if(!user) return;
+            const unsubscribe = dbRef.onSnapshot((doc) => {
+                if (doc.exists) setDb(doc.data());
+            }, (error) => console.error("Snapshot error:", error));
+            return () => unsubscribe();
+          }, [user]);
+
+          const toggleTest = async (testId) => {
+            try {
+                const newActive = db.activeTests.includes(testId) 
+                    ? db.activeTests.filter(id => id !== testId) 
+                    : [...db.activeTests, testId];
+                await dbRef.update({ activeTests: newActive });
+            } catch (err) {}
+          };
+
+          const copyLink = () => {
+            const link = "https://MINATPINTARSMAN3/login.siswa";
+            navigator.clipboard.writeText(link).then(() => {
+              setCopied(true); setTimeout(() => setCopied(false), 2000);
+            });
+          };
+
+          const copyRealLinkForTesting = () => {
+            const realLink = `${window.location.origin}${window.location.pathname}#student`;
+            navigator.clipboard.writeText(realLink).then(() => {
+              setSaveStatus('Tautan Uji Tersalin!');
+              setTimeout(() => setSaveStatus(''), 2000);
+            });
+          };
+
+          const handleSchoolDataChange = (e) => {
+            const { name, value } = e.target;
+            setDb(prev => ({ ...prev, schoolData: { ...prev.schoolData, [name]: value } }));
+          };
+
+          const saveSchoolData = async (e) => {
+            e.preventDefault();
+            try {
+                await dbRef.update({ schoolData: db.schoolData });
+                setSaveStatus('Tersimpan!'); setTimeout(() => setSaveStatus(''), 2000);
+            } catch (err) {}
+          };
+
+          const deleteStudent = async (nisn) => {
+            try {
+                const updatedStudents = db.students.filter(s => s.nisn !== nisn);
+                await dbRef.update({ students: updatedStudents });
+            } catch (err) {}
+          };
+
+          const clearAllStudents = async () => {
+            try {
+                await dbRef.update({ students: [] });
+                setShowConfirmClear(false);
+            } catch (err) {}
+          };
+
+          const exportToCSV = () => {
+            const { schoolData, students } = db;
+            let csv = "LEMBAR HASIL ANALISIS TES SISWA\n\n";
+            csv += `Nama Sekolah,,:,${schoolData.schoolName || '-'}\n`;
+            csv += `Guru Pembimbing BK,,:,${schoolData.counselorName || '-'}\n`;
+            csv += `NIP Guru BK,,:,${schoolData.counselorNip || '-'}\n`;
+            csv += `Ditetapkan di,,:,${schoolData.city || '-'}\n`;
+            csv += `Tanggal Cetak,,:,${schoolData.dateSet || '-'}\n\n`;
+            csv += "No,Nama Siswa,Kelas,NISN,Modul Tes,Rekomendasi,Tindak Lanjut Guru BK,Saran untuk Siswa\n";
+            
+            students.forEach((s, idx) => {
+              const analysis = generateAnalysis(s);
+              const testName = TEST_CATALOG.find(t => t.id === s.currentTest)?.name || 'Belum memilih tes';
+              csv += `${idx + 1},${s.name},${s.class},${s.nisn},"${testName}","${analysis.rekomendasi}","${analysis.tindakLanjut}","${analysis.saran}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Hasil_Analisis_${schoolData.schoolName ? schoolData.schoolName.replace(/\s+/g, '_') : 'Siswa'}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+          };
+
+          const handleCounselorLogin = (e) => {
+            e.preventDefault();
+            const username = e.target.username.value;
+            const password = e.target.password.value;
+            
+            if (username.trim() !== '' && password === 'BK2026') {
+                sessionStorage.setItem('eduTest_counselorSession', 'active');
+                setCounselorSession('active');
+                setLoginError('');
+            } else {
+                setLoginError('Kata Sandi salah!');
+            }
+          };
+
+          const handleCounselorLogout = () => {
+            sessionStorage.removeItem('eduTest_counselorSession');
+            onLogout();
+          };
+
+          if (!counselorSession) {
+            return (
+              <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-fade-in bg-[#101015]">
+                <div className="absolute top-[10%] left-[20%] w-96 h-96 bg-cyan-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+                <div className="flex w-full max-w-4xl bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl h-[550px] relative z-10 backdrop-blur-xl">
+                  
+                  <div className="hidden lg:flex lg:w-5/12 bg-white/5 border-r border-white/10 relative p-8 flex-col justify-center items-center text-center">
+                    <div className="floating-logo relative rounded-full p-2 bg-white/10 backdrop-blur-md shadow-[0_0_30px_rgba(34,211,238,0.2)] border border-sky-500/30 shiny-effect mb-6">
+                       <img src="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" alt="Logo SMA 3 Sorong" fetchpriority="high" loading="eager" decoding="sync" className="w-28 h-28 object-contain drop-shadow-xl" />
+                    </div>
+                    <h2 className="text-xl font-black tracking-widest text-sky-500 uppercase mb-2">SMAN 3 KOTA SORONG</h2>
+                    <h3 className="text-2xl font-bold text-white mb-2">Portal Guru BK</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">Sistem manajemen evaluasi premium dan pemantauan real-time.</p>
+                  </div>
+                  
+                  <div className="w-full lg:w-7/12 p-6 sm:p-10 flex flex-col justify-center relative">
+                    <div className="mb-8 lg:hidden text-center flex flex-col items-center">
+                       <div className="floating-logo relative rounded-full p-1 bg-white/5 border border-sky-500/30 mb-4">
+                         <img src="https://i.ibb.co.com/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" alt="Logo SMA 3 Sorong" fetchpriority="high" loading="eager" decoding="sync" className="w-20 h-20 object-contain" />
+                       </div>
+                      <h3 className="text-2xl font-bold text-white">Login Guru BK</h3>
+                    </div>
+
+                    <div className="mb-6 hidden lg:block">
+                      <h3 className="text-2xl font-bold text-white mb-1">Selamat Datang!</h3>
+                      <p className="text-slate-400 text-sm">Masukkan kredensial Anda untuk mengakses dashboard.</p>
+                    </div>
+
+                    <form onSubmit={handleCounselorLogin} className="space-y-4 relative z-10">
+                      {loginError && (
+                          <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-2.5 rounded-xl text-sm font-bold text-center shadow-lg">
+                              <i className="fas fa-exclamation-circle mr-2"></i> {loginError}
+                          </div>
+                      )}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 ml-1 mb-1">Username (Nama Guru BK)</label>
+                        <input required type="text" name="username" placeholder="Masukkan Nama Anda" 
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500/50 transition-all text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 ml-1 mb-1">Kata Sandi</label>
+                        <div className="relative">
+                          <input required type={showPassword ? "text" : "password"} name="password" placeholder="Masukkan Kata Sandi" 
+                            className="w-full px-4 py-3 pr-12 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500/50 transition-all text-sm" />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-sky-500 transition-colors focus:outline-none active:scale-90">
+                            <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4">
+                        <button type="submit" className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-slate-900 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(34,211,238,0.3)] active:scale-[0.98]">
+                          Masuk Dashboard
+                        </button>
+                      </div>
+                    </form>
+                    
+                    <button type="button" onClick={onLogout} className="mt-6 text-xs font-medium text-slate-500 hover:text-sky-400 transition-colors self-center flex items-center p-2 rounded-lg hover:bg-white/5 active:scale-95">
+                      <i className="fas fa-chevron-left mr-1"></i> Pilihan Portal
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="h-full w-full flex overflow-hidden z-10 animate-fade-in relative bg-[#101015]">
+              <div className="absolute top-[-15%] left-[-10%] w-[75%] h-[75%] bg-gradient-to-br from-cyan-400/30 via-sky-400/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute top-[20%] left-[20%] w-[50%] h-[50%] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute bottom-[-15%] right-[-5%] w-[65%] h-[65%] bg-gradient-to-tl from-cyan-300/30 to-sky-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+              {/* SIDEBAR */}
+              <aside className="w-64 bg-white/5 border-r border-white/10 flex flex-col hidden md:flex z-20 relative backdrop-blur-md">
+                <div className="p-6 border-b border-white/10">
+                  <div className="flex items-center space-x-3">
+                    <img src="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" fetchpriority="high" loading="eager" decoding="sync" className="w-10 h-10 object-contain drop-shadow-lg" />
+                    <div>
+                       <h1 className="text-lg font-bold text-white tracking-tight">Portal BK</h1>
+                       <p className="text-[10px] font-bold text-sky-500">SMAN 3 SORONG</p>
+                    </div>
+                  </div>
+                </div>
+
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                  <button type="button" onClick={() => setActiveTab('dashboard')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-medium hover:pl-5 ${activeTab === 'dashboard' ? 'bg-cyan-500/10 text-sky-400 border border-cyan-500/20 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className="fas fa-tachometer-alt w-5 text-center"></i> <span>Modul Tes</span>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('students')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-medium hover:pl-5 ${activeTab === 'students' ? 'bg-cyan-500/10 text-sky-400 border border-cyan-500/20 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className="fas fa-desktop w-5 text-center"></i> <span>Status Peserta</span>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('hasil_analisis')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-medium hover:pl-5 ${activeTab === 'hasil_analisis' ? 'bg-cyan-500/10 text-sky-400 border border-cyan-500/20 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className="fas fa-file-excel w-5 text-center"></i> <span>Hasil Analisis</span>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('school')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-medium hover:pl-5 ${activeTab === 'school' ? 'bg-cyan-500/10 text-sky-400 border border-cyan-500/20 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className="fas fa-building w-5 text-center"></i> <span>Data Sekolah</span>
+                  </button>
+                  <button type="button" onClick={() => setActiveTab('guide')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-medium hover:pl-5 ${activeTab === 'guide' ? 'bg-cyan-500/10 text-sky-400 border border-cyan-500/20 shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className="fas fa-book w-5 text-center"></i> <span>Panduan Aplikasi</span>
+                  </button>
+                </nav>
+
+                <div className="p-4 border-t border-white/10">
+                  <button type="button" onClick={handleCounselorLogout} className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-all active:scale-95">
+                    <i className="fas fa-sign-out-alt"></i> <span>Keluar</span>
+                  </button>
+                </div>
+              </aside>
+
+              <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                <header className="md:hidden bg-white/5 border-b border-white/10 p-3 flex justify-between items-center z-20 backdrop-blur-md">
+                    <img src="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" fetchpriority="high" loading="eager" decoding="sync" className="w-8 h-8 object-contain" />
+                    <div className="flex space-x-1">
+                      <button type="button" onClick={() => setActiveTab('dashboard')} className={`p-2 rounded-lg border transition-all active:scale-90 ${activeTab === 'dashboard' ? 'bg-cyan-500/20 text-sky-400 border-cyan-500/30' : 'bg-transparent text-slate-400 border-transparent'}`}><i className="fas fa-tachometer-alt"></i></button>
+                      <button type="button" onClick={() => setActiveTab('students')} className={`p-2 rounded-lg border transition-all active:scale-90 ${activeTab === 'students' ? 'bg-cyan-500/20 text-sky-400 border-cyan-500/30' : 'bg-transparent text-slate-400 border-transparent'}`}><i className="fas fa-desktop"></i></button>
+                      <button type="button" onClick={() => setActiveTab('hasil_analisis')} className={`p-2 rounded-lg border transition-all active:scale-90 ${activeTab === 'hasil_analisis' ? 'bg-cyan-500/20 text-sky-400 border-cyan-500/30' : 'bg-transparent text-slate-400 border-transparent'}`}><i className="fas fa-file-excel"></i></button>
+                      <button type="button" onClick={() => setActiveTab('school')} className={`p-2 rounded-lg border transition-all active:scale-90 ${activeTab === 'school' ? 'bg-cyan-500/20 text-sky-400 border-cyan-500/30' : 'bg-transparent text-slate-400 border-transparent'}`}><i className="fas fa-building"></i></button>
+                      <button type="button" onClick={() => setActiveTab('guide')} className={`p-2 rounded-lg border transition-all active:scale-90 ${activeTab === 'guide' ? 'bg-cyan-500/20 text-sky-400 border-cyan-500/30' : 'bg-transparent text-slate-400 border-transparent'}`}><i className="fas fa-book"></i></button>
+                    </div>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative z-10 w-full max-w-6xl mx-auto">
+                  
+                  {activeTab === 'dashboard' && (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <h2 className="text-2xl font-bold text-white">Manajemen Tes</h2>
+                        <p className="text-slate-400 text-sm mt-1">Aktifkan modul tes untuk dibagikan ke peserta.</p>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-cyan-500/20 via-sky-600/10 to-transparent rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden border border-cyan-500/30 flex flex-col md:flex-row items-center justify-between hover:border-cyan-400/50 transition-colors">
+                        <div className="absolute -top-10 -right-10 p-4 opacity-10 pointer-events-none"><i className="fas fa-link text-sky-400 text-[10rem]"></i></div>
+                        <div className="relative z-10 mb-4 md:mb-0 md:pr-6 text-center md:text-left flex-1">
+                          <h3 className="text-lg font-bold text-sky-400 mb-1 flex items-center justify-center md:justify-start">
+                            <i className="fas fa-link mr-2"></i> Tautan Akses Siswa
+                          </h3>
+                          <p className="text-slate-300 text-sm max-w-lg mb-3">Bagikan tautan resmi di bawah ini kepada siswa agar langsung masuk ke portal tes login siswa:</p>
+                          
+                          <div className="inline-flex items-center space-x-2 bg-black/40 border border-cyan-500/30 px-4 py-2 rounded-xl text-sky-400 font-mono text-xs font-bold tracking-wider shadow-inner">
+                            <span>https://MINATPINTARSMAN3/login.siswa</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 relative z-10 w-full md:w-auto">
+                          <button type="button" onClick={copyLink} className="flex items-center justify-center space-x-2 px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold rounded-xl transition-all shadow-md text-sm active:scale-95">
+                            {copied ? <i className="fas fa-check-circle"></i> : <i className="fas fa-copy"></i>}
+                            <span>{copied ? 'Tersalin!' : 'Salin Tautan'}</span>
+                          </button>
+                          
+                          <button type="button" onClick={copyRealLinkForTesting} className="flex items-center justify-center space-x-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 text-sky-300/80 hover:text-sky-300 border border-white/10 rounded-lg text-xs font-semibold transition-all active:scale-95">
+                            <i className="fas fa-flask"></i>
+                            <span>Salin Link Uji Lapangan</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {saveStatus && (
+                        <div className="bg-[#1e1e24] border border-cyan-500/30 text-sky-400 px-4 py-2 rounded-xl text-xs font-bold w-fit mx-auto animate-pulse">
+                           {saveStatus}
+                        </div>
+                      )}
+
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center">
+                          <i className="fas fa-chart-line mr-2 text-sky-400"></i> Katalog Modul Tes
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {TEST_CATALOG.map(test => {
+                            const isActive = db.activeTests.includes(test.id);
+                            return (
+                              <div key={test.id} className={`p-5 rounded-2xl border transition-all duration-300 flex flex-col h-full hover:-translate-y-1 ${isActive ? 'bg-cyan-500/5 border-cyan-500/30 shadow-[0_5px_15px_rgba(34,211,238,0.1)]' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}>
+                                <div className="flex justify-between items-start mb-4">
+                                  <div className={`p-2.5 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-cyan-500/20 text-sky-400' : 'bg-white/10 text-slate-400'}`}>
+                                    {test.icon}
+                                  </div>
+                                  <button type="button" onClick={() => toggleTest(test.id)} className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors focus:outline-none cursor-pointer ${isActive ? 'bg-cyan-500' : 'bg-slate-600'}`}>
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-5' : 'translate-x-1'}`} />
+                                  </button>
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className={`text-base font-bold mb-1 ${isActive ? 'text-white' : 'text-slate-300'}`}>{test.name}</h4>
+                                  <p className="text-xs text-slate-400 leading-relaxed">{test.desc}</p>
+                                </div>
+                                <div className="mt-4 pt-3 border-t border-white/5">
+                                  {isActive ? (
+                                    <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase flex items-center"><i className="fas fa-unlock mr-1.5"></i> Aktif</span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase flex items-center"><i className="fas fa-lock mr-1.5"></i> Terkunci</span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'students' && (
+                    <div className="flex flex-col h-full space-y-4 animate-fade-in">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
+                        <div>
+                          <h2 className="text-2xl font-bold text-white">Status Peserta</h2>
+                          <div className="flex items-center mt-1 space-x-2 text-slate-400 text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                            <span>Total {db.students.length} Peserta Terdaftar</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 w-full sm:w-auto">
+                          <button type="button" onClick={() => onRefresh()} className="flex-1 sm:flex-none flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-sm font-medium transition-all active:scale-95">
+                            <i className={`fas fa-sync-alt ${isRefreshing ? 'fa-spin text-sky-400' : ''}`}></i>
+                            <span>Segarkan</span>
+                          </button>
+
+                          {!showConfirmClear ? (
+                            <button type="button" onClick={() => setShowConfirmClear(true)} disabled={db.students.length === 0} className="flex-1 sm:flex-none flex items-center space-x-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-sm font-medium transition-all disabled:opacity-50 active:scale-95">
+                              <i className="fas fa-trash-alt"></i> <span>Kosongkan</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center space-x-2 bg-red-500/10 border border-red-500/30 p-1 rounded-xl">
+                              <button type="button" onClick={clearAllStudents} className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-all active:scale-90">Hapus</button>
+                              <button type="button" onClick={() => setShowConfirmClear(false)} className="px-3 py-1 bg-white/10 hover:bg-white/20 text-slate-200 rounded-lg text-xs font-medium transition-all active:scale-90">Batal</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-0 overflow-hidden flex-1 flex flex-col backdrop-blur-md shadow-lg">
+                        <div className="flex-1 overflow-auto">
+                          {db.students.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-slate-400">
+                              <i className="fas fa-users text-4xl mb-3 text-slate-600"></i>
+                              <p className="text-sm font-medium">Belum Ada Peserta</p>
+                            </div>
+                          ) : (
+                            <table className="w-full text-left border-collapse text-sm">
+                              <thead className="bg-white/5 text-xs uppercase text-slate-400 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                  <th className="px-4 py-3 font-semibold">Nama Peserta</th>
+                                  <th className="px-4 py-3 font-semibold">Kelas/NISN</th>
+                                  <th className="px-4 py-3 font-semibold">Status</th>
+                                  <th className="px-4 py-3 font-semibold text-center w-16">Aksi</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/5">
+                                {db.students.map((student, idx) => (
+                                  <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                                    <td className="px-4 py-3 font-bold text-white flex items-center space-x-3">
+                                      <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-sky-400 text-xs shadow-inner">
+                                        {student.name.charAt(0)}
+                                      </div>
+                                      <span>{student.name}</span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="text-slate-300">{student.class}</div>
+                                      <div className="text-slate-500 font-mono text-xs">{student.nisn}</div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      {student.status === 'idle' && <span className="text-xs font-medium text-slate-400 bg-white/5 px-2 py-1 rounded">Menunggu</span>}
+                                      {student.status === 'testing' && <span className="text-xs font-bold text-sky-400 bg-sky-500/10 px-2 py-1 rounded flex items-center w-max"><span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-pulse mr-1.5"></span>Mengerjakan</span>}
+                                      {student.status === 'finished' && <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded"><i className="fas fa-check mr-1"></i>Selesai</span>}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <button type="button" onClick={() => deleteStudent(student.nisn)} className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors active:scale-90">
+                                        <i className="fas fa-trash-alt text-xs"></i>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'hasil_analisis' && (
+                    <div className="flex flex-col h-full space-y-4 animate-fade-in">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                        <div>
+                          <h2 className="text-2xl font-bold text-white">Hasil Analisis</h2>
+                          <p className="text-slate-400 text-sm mt-1">Pratinjau data sebelum diunduh.</p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 w-full sm:w-auto">
+                          <button type="button" onClick={exportToCSV} disabled={db.students.length === 0} className="flex-1 sm:flex-none flex items-center space-x-2 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold rounded-xl transition-all shadow-md text-sm disabled:opacity-50 active:scale-95 shadow-[0_5px_15px_rgba(34,211,238,0.2)]">
+                            <i className="fas fa-file-excel"></i> <span>Unduh XL</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden flex-1 flex flex-col relative shadow-xl">
+                        <div className="bg-slate-900 px-4 py-2 flex items-center space-x-3 text-xs text-slate-400 border-b border-slate-700 shrink-0">
+                          <div className="flex space-x-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div></div>
+                          <span className="font-mono">Preview_Hasil.xlsx</span>
+                        </div>
+                        
+                        <div className="flex-1 overflow-auto p-4 bg-[#1e1e24] scroll-smooth">
+                          <div className="min-w-[1400px] bg-slate-900 border border-slate-700 p-6 rounded-xl shadow-inner text-slate-300 text-sm font-sans">
+                            <div className="text-center font-bold text-lg text-white mb-6 border-b border-slate-700 pb-4">
+                              LEMBAR HASIL ANALISIS TES SISWA
+                            </div>
+                            
+                            <div className="grid grid-cols-[140px_10px_1fr] md:grid-cols-[140px_10px_1fr_140px_10px_1fr] gap-y-2 mb-6">
+                              <div>Sekolah</div><div>:</div><div className="font-bold text-white">{db.schoolData?.schoolName || '-'}</div>
+                              <div>Ditetapkan di</div><div>:</div><div className="font-bold text-white">{db.schoolData?.city || '-'}</div>
+                              <div>Guru BK</div><div>:</div><div className="font-bold text-white">{db.schoolData?.counselorName || '-'}</div>
+                              <div>Tgl Cetak</div><div>:</div><div className="font-bold text-white">{db.schoolData?.dateSet || '-'}</div>
+                              <div>NIP Guru</div><div>:</div><div className="font-bold text-white">{db.schoolData?.counselorNip || '-'}</div>
+                            </div>
+
+                            <table className="w-full text-left border-collapse border border-slate-700 text-xs">
+                              <thead>
+                                <tr className="bg-slate-800 border-b border-slate-700 text-slate-300 uppercase tracking-wider">
+                                  <th className="p-3 border-r border-slate-700 text-center w-10">No</th>
+                                  <th className="p-3 border-r border-slate-700 w-40">Nama Siswa</th>
+                                  <th className="p-3 border-r border-slate-700 w-24">Kelas</th>
+                                  <th className="p-3 border-r border-slate-700 w-32">NISN</th>
+                                  <th className="p-3 border-r border-slate-700 w-40">Modul Tes</th>
+                                  <th className="p-3 border-r border-slate-700 w-56">Rekomendasi</th>
+                                  <th className="p-3 border-r border-slate-700 w-64">Tindak Lanjut Guru BK</th>
+                                  <th className="p-3 w-56">Saran untuk Siswa</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-[13px] leading-relaxed">
+                                {db.students.length === 0 ? (
+                                  <tr><td colSpan="8" className="p-6 text-center text-slate-500 italic">Belum ada data siswa.</td></tr>
+                                ) : (
+                                  db.students.map((student, idx) => {
+                                    const analysis = generateAnalysis(student);
+                                    const testName = TEST_CATALOG.find(t => t.id === student.currentTest)?.name || '-';
+                                    return (
+                                      <tr key={idx} className="border-b border-slate-700/50 hover:bg-white/5 align-top transition-colors">
+                                        <td className="p-3 border-r border-slate-700 text-center">{idx + 1}</td>
+                                        <td className="p-3 border-r border-slate-700 font-bold text-white">{student.name}</td>
+                                        <td className="p-3 border-r border-slate-700 text-slate-300 font-medium">{student.class}</td>
+                                        <td className="p-3 border-r border-slate-700 text-slate-400 font-mono">{student.nisn}</td>
+                                        <td className="p-3 border-r border-slate-700 text-sky-400 font-semibold">{testName}</td>
+                                        <td className="p-3 border-r border-slate-700 text-slate-300">{analysis.rekomendasi}</td>
+                                        <td className="p-3 border-r border-slate-700 text-slate-300">{analysis.tindakLanjut}</td>
+                                        <td className="p-3 text-slate-300">{analysis.saran}</td>
+                                      </tr>
+                                    )
+                                  })
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'school' && (
+                    <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
+                      <div>
+                        <h2 className="text-2xl font-bold text-white">Data Sekolah</h2>
+                        <p className="text-slate-400 text-sm mt-1">Pengaturan identitas untuk kop laporan.</p>
+                      </div>
+
+                      <form onSubmit={saveSchoolData} className="bg-white/5 border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md space-y-5 shadow-lg">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 mb-1">Nama Sekolah</label>
+                          <input type="text" name="schoolName" value={db.schoolData?.schoolName || ''} onChange={handleSchoolDataChange} 
+                            className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:border-sky-500/50 focus:outline-none text-sm transition-colors" />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">Nama Guru BK</label>
+                            <input type="text" name="counselorName" value={db.schoolData?.counselorName || ''} onChange={handleSchoolDataChange}
+                              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:border-sky-500/50 focus:outline-none text-sm transition-colors" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">NIP Guru BK</label>
+                            <input type="text" name="counselorNip" value={db.schoolData?.counselorNip || ''} onChange={handleSchoolDataChange}
+                              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-mono focus:border-sky-500/50 focus:outline-none text-sm transition-colors" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">Kota (Ditetapkan di)</label>
+                            <input type="text" name="city" value={db.schoolData?.city || ''} onChange={handleSchoolDataChange}
+                              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:border-sky-500/50 focus:outline-none text-sm transition-colors" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 mb-1">Tanggal Cetak</label>
+                            <input type="date" name="dateSet" value={db.schoolData?.dateSet || ''} onChange={handleSchoolDataChange}
+                              className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:border-sky-500/50 focus:outline-none text-sm [color-scheme:dark] transition-colors" />
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-end">
+                          <button type="submit" className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold rounded-xl text-sm transition-all shadow-[0_5px_15px_rgba(34,211,238,0.2)] active:scale-95">
+                            Simpan Pengaturan
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {activeTab === 'guide' && (
+                    <div className="space-y-6 animate-fade-in max-w-6xl mx-auto pb-8">
+                      <div>
+                        <h2 className="text-2xl font-bold text-white flex items-center">
+                          <i className="fas fa-book mr-3 text-sky-400"></i> Panduan Penggunaan Aplikasi
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1">Langkah-langkah lengkap untuk mengelola asesmen siswa dari awal hingga akhir.</p>
+                      </div>
+
+                      <div className="flex flex-col lg:flex-row gap-6 items-start">
+                        {/* Kolom Kiri: Daftar Panduan */}
+                        <div className="flex-1 grid gap-4 w-full">
+                          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start space-x-4 shadow-md">
+                            <div className="bg-cyan-500/20 text-sky-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                            <div>
+                              <h3 className="text-sky-400 font-bold text-base mb-1">Pengaturan Data Sekolah</h3>
+                              <p className="text-slate-300 text-sm leading-relaxed">Sebelum memulai ujian, pastikan Anda mengisi <strong>Data Sekolah</strong> terlebih dahulu. Buka menu <i className="fas fa-building mx-1 text-slate-400"></i>, lengkapi nama sekolah, nama Anda (Guru BK), beserta NIP. Data ini akan tercetak otomatis sebagai Kop Surat di lembar Excel.</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start space-x-4 shadow-md">
+                            <div className="bg-cyan-500/20 text-sky-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                            <div>
+                              <h3 className="text-sky-400 font-bold text-base mb-1">Mengaktifkan Modul Tes</h3>
+                              <p className="text-slate-300 text-sm leading-relaxed">Buka menu <i className="fas fa-tachometer-alt mx-1 text-slate-400"></i> <strong>Modul Tes</strong>. Klik tombol <em>toggle</em> pada modul yang ingin diujikan (misal: Tes Kepribadian) hingga statusnya berubah menjadi <span className="text-emerald-400 font-bold">Aktif</span>. Modul yang aktif ini otomatis akan langsung muncul dan bisa diakses di layar HP siswa.</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start space-x-4 shadow-md">
+                            <div className="bg-cyan-500/20 text-sky-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                            <div>
+                              <h3 className="text-sky-400 font-bold text-base mb-1">Membagikan Tautan Akses</h3>
+                              <p className="text-slate-300 text-sm leading-relaxed">Masih di menu Modul Tes, klik tombol <strong>Salin Tautan</strong> pada banner. Tautan akan otomatis tersalin. Bagikan ke grup WhatsApp siswa agar mereka bisa langsung masuk ke Portal Login Siswa tanpa perlu mencari alamat secara manual.</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start space-x-4 shadow-md">
+                            <div className="bg-cyan-500/20 text-sky-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
+                            <div>
+                              <h3 className="text-sky-400 font-bold text-base mb-1">Memantau Siswa secara Live</h3>
+                              <p className="text-slate-300 text-sm leading-relaxed">Masuk ke menu <i className="fas fa-desktop mx-1 text-slate-400"></i> <strong>Status Peserta</strong>. Di sini Anda bisa melihat secara instan daftar siswa yang sudah login, siapa yang sedang mengerjakan, dan siapa yang sudah mengumpulkan. Jika ada siswa salah login, Anda bisa menghapus data siswa tersebut dengan mengklik ikon <i className="fas fa-trash-alt text-red-400 mx-1"></i> (Tempat Sampah).</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-start space-x-4 shadow-md">
+                            <div className="bg-cyan-500/20 text-sky-400 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">5</div>
+                            <div>
+                              <h3 className="text-sky-400 font-bold text-base mb-1">Mengunduh Hasil Analisis & Mereset Data</h3>
+                              <p className="text-slate-300 text-sm leading-relaxed">Setelah siswa selesai, buka menu <i className="fas fa-file-excel mx-1 text-slate-400"></i> <strong>Hasil Analisis</strong> untuk melihat pratinjau tabel nilai. Klik <strong>Unduh XL (CSV)</strong> untuk menyimpan laporan. Bila sudah tersimpan dan Anda ingin memulai tes untuk kelas lain, tekan tombol <strong>Kosongkan Data</strong> agar tabel kembali bersih.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Kolom Kanan: Contact / Help Section with Photo (Sticky/Sidebar) */}
+                        <div className="w-full lg:w-[340px] shrink-0 bg-gradient-to-br from-cyan-400/20 to-sky-500/10 border border-cyan-400/30 rounded-[2rem] p-6 lg:sticky lg:top-0 flex flex-col items-center text-center shadow-[0_0_30px_rgba(34,211,238,0.15)] relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-400/30 blur-[60px] rounded-full pointer-events-none"></div>
+                          
+                          <div className="relative mb-5 flex justify-center items-center">
+                            <div className="absolute inset-0 bg-cyan-400 rounded-full blur-[20px] opacity-50 animate-pulse"></div>
+                            <img src="https://i.ibb.co/ZR1CsWqx/ALFIAN-2024493911-1.jpg" alt="Developer (Alfian)" fetchpriority="high" loading="eager" decoding="sync" className="w-36 h-36 object-cover rounded-full ring-4 ring-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.8)] relative z-10 contrast-125 brightness-110 drop-shadow-2xl" />
+                          </div>
+                          
+                          <div className="relative z-10 flex flex-col items-center w-full">
+                            <h3 className="text-xl font-bold text-white mb-2">Butuh Bantuan?</h3>
+                            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+                              Jika Anda mengalami kendala atau membutuhkan penyesuaian fitur khusus, jangan ragu untuk menghubungi pengembang aplikasi.
+                            </p>
+                            <a href="https://wa.me/6281247178832" target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center space-x-2 px-6 py-3.5 bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(37,211,102,0.3)] active:scale-95">
+                              <i className="fab fa-whatsapp text-lg"></i>
+                              <span>Hubungi via WhatsApp</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </main>
+            </div>
+          );
+        }
+
+        // ==========================================
+        // PORTAL SISWA (STUDENT)
+        // ==========================================
+        function StudentPortal({ onLogout, isRefreshing, onRefresh, user }) {
+          const [session, setSession] = useState(JSON.parse(sessionStorage.getItem('eduTest_studentSession')));
+          const [db, setDb] = useState({ activeTests: [], students: [], schoolData: {} });
+          const [currentView, setCurrentView] = useState('dashboard');
+          const [activeTestId, setActiveTestId] = useState(null);
+          const [currentQIndex, setCurrentQIndex] = useState(0);
+          const [answers, setAnswers] = useState({});
+          const [timeLeft, setTimeLeft] = useState(40 * 60);
+          const [showMap, setShowMap] = useState(false);
+
+          useEffect(() => {
+            if(!user) return;
+            const unsubscribe = dbRef.onSnapshot((doc) => {
+                if (doc.exists) setDb(doc.data());
+            }, (error) => {});
+            return () => unsubscribe();
+          }, [user]);
+
+          useEffect(() => {
+            let timer;
+            if (currentView === 'testing') {
+              timer = setInterval(() => {
+                setTimeLeft((prev) => {
+                  if (prev <= 1) { clearInterval(timer); return 0; }
+                  return prev - 1;
+                });
+              }, 1000);
+            }
+            return () => clearInterval(timer);
+          }, [currentView]);
+
+          useEffect(() => {
+            if (currentView === 'testing' && timeLeft === 0) finishTest();
+          }, [timeLeft, currentView]);
+
+          const handleLogin = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const newSession = {
+              name: formData.get('name'), class: formData.get('class'),
+              nisn: formData.get('nisn'), id: formData.get('nisn') + Date.now()
+            };
+            
+            sessionStorage.setItem('eduTest_studentSession', JSON.stringify(newSession));
+            setSession(newSession);
+
+            try {
+                await firestore.runTransaction(async (transaction) => {
+                    const docSnap = await transaction.get(dbRef);
+                    if (!docSnap.exists) return;
+                    const data = docSnap.data();
+                    const filtered = data.students.filter(s => s.nisn !== newSession.nisn);
+                    filtered.push({ ...newSession, status: 'idle', currentTest: null });
+                    transaction.update(dbRef, { students: filtered });
+                });
+            } catch(e) {}
+          };
+
+          const updateStudentStatus = async (status, testId = null) => {
+            if (!session) return;
+            try {
+                await firestore.runTransaction(async (transaction) => {
+                    const docSnap = await transaction.get(dbRef);
+                    if (!docSnap.exists) return;
+                    const data = docSnap.data();
+                    const updated = data.students.map(s => {
+                        if (s.nisn === session.nisn) return { ...s, status, currentTest: testId || s.currentTest };
+                        return s;
+                    });
+                    transaction.update(dbRef, { students: updated });
+                });
+            } catch(e) {}
+          };
+
+          const startTest = (testId) => {
+            setActiveTestId(testId); setCurrentView('testing');
+            setCurrentQIndex(0); setAnswers({}); setTimeLeft(40 * 60); setShowMap(false);
+            updateStudentStatus('testing', testId);
+          };
+
+          const finishTest = () => {
+            setActiveTestId(null); setCurrentView('dashboard');
+            updateStudentStatus('finished');
+          };
+
+          const refreshData = () => { onRefresh(); };
+
+          const formatTime = (seconds) => {
+            const m = Math.floor(seconds / 60); const s = seconds % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          };
+
+          // --- STUDENT LOGIN ---
+          if (!session) {
+            return (
+              <div className="absolute inset-0 flex items-center justify-center p-4 z-50 animate-fade-in bg-[#101015]">
+                <div className="absolute top-[10%] right-[10%] w-96 h-96 bg-[#06b6d4]/10 rounded-full blur-[140px] pointer-events-none"></div>
+                <div className="w-full max-w-sm relative z-10 flex flex-col">
+                  <div className="text-center mb-6 flex flex-col items-center">
+                    <div className="floating-logo relative rounded-full p-2 bg-white/5 border border-cyan-500/30 backdrop-blur-md shadow-[0_0_40px_rgba(34,211,238,0.3)] shiny-effect mb-4">
+                       <img src="https://i.ibb.co/nMH2M1Km/Chat-GPT-Image-20-Mei-2026-12-35-08.png" alt="Logo SMA 3 Sorong" fetchpriority="high" loading="eager" decoding="sync" className="w-20 h-20 object-contain drop-shadow-xl" />
+                    </div>
+                    <h2 className="text-lg font-black text-sky-400 tracking-widest uppercase mb-1">SMAN 3 KOTA SORONG</h2>
+                    <h3 className="text-2xl font-bold text-white">Portal Siswa</h3>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl shadow-2xl">
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">Nama Lengkap</label>
+                        <input required name="name" type="text" placeholder="Sesuai Ijazah" className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-sky-500/50 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">Kelas</label>
+                        <input required name="class" type="text" placeholder="Cth: XII IPA 1" className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-sky-500/50 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 mb-1 ml-1">NISN</label>
+                        <input required name="nisn" type="number" placeholder="Nomor Induk Siswa" className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white font-mono text-sm focus:outline-none focus:border-sky-500/50 transition-colors" />
+                      </div>
+                      <div className="pt-2">
+                        <button type="submit" className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-sky-600 text-slate-900 font-bold rounded-xl shadow-md text-sm active:scale-95 transition-transform">Mulai Akses</button>
+                      </div>
+                    </form>
+                  </div>
+                  <button type="button" onClick={onLogout} className="mt-6 text-xs font-medium text-slate-500 hover:text-sky-400 self-center flex items-center p-2 rounded-lg hover:bg-white/5 transition-all active:scale-95"><i className="fas fa-chevron-left mr-1"></i> Pilihan Portal</button>
+                </div>
+              </div>
+            );
+          }
+
+          // --- STUDENT TESTING VIEW ---
+          if (currentView === 'testing') {
+            const activeTestInfo = TEST_CATALOG.find(t => t.id === activeTestId);
+            const q = MOCK_QUESTIONS[currentQIndex];
+            const isLowTime = timeLeft < 300; 
+
+            return (
+              <div className="flex-1 flex flex-col z-10 bg-[#101015] absolute inset-0 overflow-hidden">
+                <div className="absolute top-[-15%] left-[-10%] w-[75%] h-[75%] bg-gradient-to-br from-cyan-400/30 via-sky-400/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute bottom-[-15%] right-[-5%] w-[65%] h-[65%] bg-gradient-to-tl from-cyan-300/30 to-sky-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+                <header className="bg-white/5 border-b border-white/10 p-3 flex justify-between items-center z-20 backdrop-blur-md relative">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-[#06b6d4]/20 rounded-lg text-sky-400">{activeTestInfo?.icon}</div>
+                    <h2 className="font-bold text-white text-sm truncate w-24 sm:w-auto">{activeTestInfo?.name}</h2>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                     <button type="button" onClick={() => setShowMap(true)} className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs font-bold border border-white/20 active:scale-95 transition-transform shadow-sm">
+                        <i className="fas fa-th"></i><span className="hidden sm:inline ml-1.5">Peta Soal</span>
+                     </button>
+                     <div className={`px-3 py-2 rounded-lg font-bold font-mono text-xs border ${isLowTime ? 'bg-red-500/20 text-red-400 border-red-500/50 animate-pulse' : 'bg-white/5 text-sky-400 border-white/10'}`}>
+                        <i className="fas fa-clock mr-1.5"></i><span>{formatTime(timeLeft)}</span>
+                     </div>
+                  </div>
+                </header>
+                
+                <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto p-4 flex flex-col relative scroll-smooth">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-8 flex-1 flex flex-col backdrop-blur-sm shadow-xl">
+                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
+                          <span className="px-3 py-1.5 bg-cyan-500/20 text-sky-400 text-xs font-bold rounded-lg shadow-sm">Soal {q.id} dari 35</span>
+                          <span className="px-3 py-1.5 bg-white/10 text-slate-300 text-xs font-bold rounded-lg shadow-sm">{q.type === 'mcq' ? 'Pilihan Ganda' : 'Uraian'}</span>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            <h3 className="text-base md:text-lg text-white mb-6 leading-relaxed font-medium">
+                              {q.text.split('\n').map((line, idx) => <span key={idx}>{line}<br/><br/></span>)}
+                            </h3>
+                            <div>
+                              {q.type === 'mcq' ? (
+                                <div className="space-y-3">
+                                  {q.options.map((opt, i) => (
+                                    <button type="button" key={i} onClick={() => setAnswers({...answers, [q.id]: i})}
+                                      className={`w-full text-left p-4 rounded-xl border transition-all flex items-start active:scale-[0.99] ${answers[q.id] === i ? 'bg-cyan-500/20 border-cyan-500 text-white shadow-md' : 'bg-black/20 border-white/10 hover:bg-white/5 text-slate-300'}`}>
+                                      <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold mr-3 shrink-0 transition-colors ${answers[q.id] === i ? 'bg-cyan-500 text-slate-900' : 'bg-white/10'}`}>
+                                        {String.fromCharCode(65+i)}
+                                      </span>
+                                      <span className="text-sm md:text-base leading-relaxed">{opt}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <textarea value={answers[q.id] || ''} onChange={(e) => setAnswers({...answers, [q.id]: e.target.value})} rows={6}
+                                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-cyan-500 focus:outline-none resize-none text-sm md:text-base transition-colors shadow-inner" placeholder="Ketik jawaban uraian Anda..."></textarea>
+                              )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center mt-6 pt-4 border-t border-white/10 shrink-0">
+                            <button type="button" onClick={() => setCurrentQIndex(prev => Math.max(0, prev - 1))} disabled={currentQIndex === 0}
+                              className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 disabled:opacity-30 text-sm font-bold flex items-center active:scale-95 transition-transform">
+                              <i className="fas fa-chevron-left mr-2"></i> Prev
+                            </button>
+                            {currentQIndex < MOCK_QUESTIONS.length - 1 ? (
+                              <button type="button" onClick={() => setCurrentQIndex(prev => Math.min(MOCK_QUESTIONS.length - 1, prev + 1))}
+                                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-bold flex items-center active:scale-95 transition-transform shadow-sm">
+                                Next <i className="fas fa-chevron-right ml-2"></i>
+                              </button>
+                            ) : (
+                              <button type="button" onClick={finishTest} 
+                                className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-900 text-sm font-bold flex items-center animate-pulse active:scale-95 transition-transform shadow-[0_5px_15px_rgba(16,185,129,0.3)]">
+                                Selesai <i className="fas fa-check ml-2"></i>
+                              </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* MODAL PETA SOAL */}
+                {showMap && (
+                  <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-[#1e1e24] border border-white/10 rounded-2xl p-5 w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+                      <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+                        <h3 className="text-lg font-bold text-white"><i className="fas fa-th mr-2 text-cyan-500"></i> Peta Soal</h3>
+                        <button type="button" onClick={() => setShowMap(false)} className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/5 active:scale-90 transition-all"><i className="fas fa-times"></i></button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-5 gap-2 pb-2">
+                         {MOCK_QUESTIONS.map((quest, i) => {
+                            const isCurrent = currentQIndex === i;
+                            const hasAnswer = answers[quest.id] !== undefined && answers[quest.id] !== '';
+                            return (
+                              <button type="button" key={quest.id} onClick={() => { setCurrentQIndex(i); setShowMap(false); }}
+                                className={`aspect-square rounded-lg flex items-center justify-center font-bold text-sm border transition-colors active:scale-90 ${isCurrent ? 'bg-cyan-500 text-slate-900 border-cyan-500 shadow-md' : hasAnswer ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'}`}>
+                                {quest.id}
+                              </button>
+                            )
+                         })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // --- STUDENT DASHBOARD ---
+          return (
+            <div className="flex-1 flex flex-col z-10 animate-fade-in relative overflow-hidden bg-[#101015]">
+              <div className="absolute top-[-15%] left-[-10%] w-[75%] h-[75%] bg-gradient-to-br from-cyan-400/30 via-sky-400/20 to-transparent rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute top-[20%] left-[20%] w-[50%] h-[50%] bg-blue-400/20 rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute bottom-[-15%] right-[-5%] w-[65%] h-[65%] bg-gradient-to-tl from-cyan-300/30 to-sky-500/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+              <header className="bg-white/5 border-b border-white/10 backdrop-blur-md shrink-0 relative z-20">
+                <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center text-slate-900 font-bold text-lg shadow-sm">
+                      {session.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h1 className="text-sm font-bold text-white">{session.name}</h1>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{session.class} • {session.nisn}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button type="button" onClick={refreshData} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-300 active:scale-90 transition-transform shadow-sm">
+                      <i className={`fas fa-sync-alt ${isRefreshing ? 'fa-spin text-cyan-500' : ''}`}></i>
+                    </button>
+                    <button type="button" onClick={onLogout} className="p-2 rounded-lg bg-red-500/10 text-red-400 active:scale-90 transition-transform shadow-sm">
+                      <i className="fas fa-sign-out-alt"></i>
+                    </button>
+                  </div>
+                </div>
+              </header>
+
+              <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+                <div className="max-w-6xl mx-auto">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-white mb-1">Modul Ujian Aktif</h2>
+                    <p className="text-slate-400 text-sm">Pilih tes yang berstatus <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">Tersedia</span>.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {TEST_CATALOG.filter(test => db.activeTests.includes(test.id)).length === 0 ? (
+                      <div className="col-span-full flex flex-col items-center justify-center p-10 border border-dashed border-white/10 rounded-[2rem] bg-white/5 backdrop-blur-sm shadow-inner mt-4">
+                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-5 border border-white/10">
+                           <i className="fas fa-folder-open text-4xl text-slate-500"></i>
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-300 mb-2">Belum Ada Tes yang Diaktifkan</h3>
+                        <p className="text-slate-500 text-sm text-center max-w-sm">Silakan tunggu instruksi. Daftar tes akan otomatis muncul di sini setelah Guru BK mengaktifkannya.</p>
+                      </div>
+                    ) : (
+                      TEST_CATALOG.filter(test => db.activeTests.includes(test.id)).map(test => {
+                        return (
+                          <div key={test.id} className="p-5 md:p-6 rounded-2xl border flex flex-col h-full bg-white/5 border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.1)] hover:-translate-y-1 transition-transform">
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 text-sky-400 shadow-inner">
+                                {test.icon}
+                              </div>
+                              <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold rounded flex items-center shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span> BUKA
+                              </span>
+                            </div>
+                            
+                            <h3 className="text-lg font-bold mb-2 text-white">{test.name}</h3>
+                            <p className="text-slate-400 text-xs mb-6 flex-1 leading-relaxed">{test.desc}</p>
+                            
+                            <button type="button" onClick={() => startTest(test.id)}
+                              className="w-full py-3 rounded-xl font-bold text-sm transition-all bg-cyan-500 text-slate-900 hover:bg-cyan-400 shadow-[0_5px_15px_rgba(34,211,238,0.3)] active:scale-95">
+                              Mulai Ujian
+                            </button>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              </main>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
